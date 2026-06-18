@@ -6,6 +6,7 @@ import StatsGrid from "@/components/StatsGrid";
 import FilterBar, { Filters } from "@/components/FilterBar";
 import SpotCard from "@/components/SpotCard";
 import AddSpotForm from "@/components/AddSpotForm";
+import ToastContainer, { showToast } from "@/components/Toast";
 
 export default function Home() {
   const [spots, setSpots] = useState<SurfSpot[]>([]);
@@ -16,6 +17,7 @@ export default function Home() {
     vibe: "all",
     crowdLevel: "all",
     sortBy: "rating",
+    search: "",
   });
 
   const fetchData = useCallback(async () => {
@@ -45,26 +47,31 @@ export default function Home() {
       });
       if (!res.ok) throw new Error("Failed to add spot");
       await fetchData();
+      showToast(`Added ${input.name} 🏄`, "success");
       return true;
     } catch {
+      showToast("Failed to add spot", "error");
       return false;
     }
   };
 
   const handleDelete = async (id: string) => {
+    const spot = spots.find((s) => s.id === id);
     const prev = spots;
     setSpots((s) => s.filter((spot) => spot.id !== id));
     try {
       const res = await fetch(`/api/spots/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
       await fetchData();
+      showToast(`Removed ${spot?.name ?? "spot"} 🗑️`, "info");
     } catch {
-      setSpots(prev); // rollback
+      setSpots(prev);
+      showToast("Failed to delete", "error");
     }
   };
 
   const handleRate = async (id: string, rating: number) => {
-    // Optimistic update
+    const spot = spots.find((s) => s.id === id);
     setSpots((s) => s.map((spot) => (spot.id === id ? { ...spot, rating } : spot)));
     try {
       const res = await fetch(`/api/spots/${id}`, {
@@ -74,15 +81,26 @@ export default function Home() {
       });
       if (!res.ok) throw new Error("Failed");
       await fetchData();
+      showToast(`Rated ${spot?.name ?? "spot"} ${rating}★`, "success");
     } catch {
-      await fetchData(); // refresh from server
+      await fetchData();
+      showToast("Failed to update rating", "error");
     }
   };
 
-  // Apply filters + sorting
+  // Apply filters + search + sorting
   const filteredSpots = spots
     .filter((s) => filters.vibe === "all" || s.vibe === filters.vibe)
     .filter((s) => filters.crowdLevel === "all" || s.crowdLevel === filters.crowdLevel)
+    .filter((s) => {
+      if (!filters.search.trim()) return true;
+      const q = filters.search.toLowerCase();
+      return (
+        s.name.toLowerCase().includes(q) ||
+        s.location.toLowerCase().includes(q) ||
+        s.notes.toLowerCase().includes(q)
+      );
+    })
     .sort((a, b) => {
       if (filters.sortBy === "rating") return b.rating - a.rating;
       if (filters.sortBy === "waveHeight") return b.waveHeight - a.waveHeight;
@@ -136,7 +154,7 @@ export default function Home() {
         {/* Add spot */}
         <AddSpotForm onAdd={handleAdd} />
 
-        {/* Filters */}
+        {/* Filters + Search */}
         <FilterBar
           filters={filters}
           onChange={setFilters}
@@ -148,7 +166,9 @@ export default function Home() {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🏝️</div>
             <p className="text-cyan-200/50 text-lg">
-              No spots match your filters, bro. Try widening the search!
+              {filters.search
+                ? `No spots match "${filters.search}", bro. Try another search!`
+                : "No spots match your filters, bro. Try widening the search!"}
             </p>
           </div>
         ) : (
@@ -169,6 +189,9 @@ export default function Home() {
       <footer className="text-center py-8 text-cyan-200/30 text-sm">
         Built with Next.js + GLM 5.2 🤙 · Deploy to Vercel ready
       </footer>
+
+      {/* Toast notifications */}
+      <ToastContainer />
     </div>
   );
 }

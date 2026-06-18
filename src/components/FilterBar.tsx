@@ -6,6 +6,7 @@ export interface Filters {
   vibe: Vibe | "all";
   crowdLevel: CrowdLevel | "all";
   sortBy: "rating" | "waveHeight" | "name";
+  search: string;
 }
 
 const vibes: (Vibe | "all")[] = ["all", "chill", "fun", "pumping", "gnarly", "epic"];
@@ -36,6 +37,28 @@ export default function FilterBar({
 }) {
   return (
     <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-4">
+      {/* Search bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-200/40">🔍</span>
+          <input
+            type="text"
+            value={filters.search}
+            onChange={(e) => onChange({ ...filters, search: e.target.value })}
+            placeholder="Search spots or locations..."
+            className="w-full bg-slate-800/80 text-white rounded-lg pl-10 pr-4 py-2 border border-white/10 focus:border-cyan-400 focus:outline-none text-sm placeholder:text-white/30"
+          />
+          {filters.search && (
+            <button
+              onClick={() => onChange({ ...filters, search: "" })}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 text-lg"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-4">
         {/* Vibe filter */}
         <div className="flex items-center gap-2">

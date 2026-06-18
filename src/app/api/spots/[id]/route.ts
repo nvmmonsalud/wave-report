@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const spot = getSpotById(id);
+  const spot = await getSpotById(id);
   if (!spot) {
     return NextResponse.json({ error: "Spot not found" }, { status: 404 });
   }
@@ -32,7 +32,7 @@ export async function PATCH(
     if (body.rating != null) input.rating = Math.max(1, Math.min(5, Number(body.rating)));
     if (body.notes !== undefined) input.notes = String(body.notes);
 
-    const spot = updateSpot(id, input);
+    const spot = await updateSpot(id, input);
     if (!spot) {
       return NextResponse.json({ error: "Spot not found" }, { status: 404 });
     }
@@ -48,7 +48,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const deleted = deleteSpot(id);
+  const deleted = await deleteSpot(id);
   if (!deleted) {
     return NextResponse.json({ error: "Spot not found" }, { status: 404 });
   }

@@ -4,8 +4,8 @@ import { SurfSpotInput } from "@/types";
 
 // GET /api/spots — list all spots + stats
 export async function GET() {
-  const spots = getAllSpots();
-  const stats = getStats();
+  const spots = await getAllSpots();
+  const stats = await getStats();
   return NextResponse.json({ spots, stats });
 }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       notes: notes ? String(notes) : "",
     };
 
-    const spot = addSpot(input);
+    const spot = await addSpot(input);
     return NextResponse.json(spot, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

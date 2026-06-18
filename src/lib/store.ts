@@ -1,7 +1,18 @@
 import { SurfSpot, SurfSpotInput, Stats, Vibe } from "@/types";
+import { Redis } from "@upstash/redis";
 
-// In-memory data store — seed with rad surf spots
-let spots: SurfSpot[] = [
+// Detect if Upstash Redis env vars are present
+const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const redis = kvUrl && kvToken ? new Redis({ url: kvUrl, token: kvToken }) : null;
+export const hasRedis = !!redis;
+
+const SPOTS_KEY = "wave-report:spots";
+const COUNTER_KEY = "wave-report:counter";
+
+// In-memory fallback store (seed data)
+const seedSpots: SurfSpot[] = [
   {
     id: "1",
     name: "Pipeline",
@@ -70,40 +81,96 @@ let spots: SurfSpot[] = [
   },
 ];
 
-let counter = 100;
+// In-memory state for fallback
+let memSpots = [...seedSpots];
+let memCounter = 100;
 
-export function getAllSpots(): SurfSpot[] {
-  return [...spots].sort((a, b) => b.rating - a.rating);
+async function ensureSeeded(): Promise<void> {
+  if (!redis) return;
+  const exists = await redis.exists(SPOTS_KEY);
+  if (!exists) {
+    await redis.set(SPOTS_KEY, JSON.stringify(seedSpots));
+    await redis.set(COUNTER_KEY, 100);
+  }
 }
 
-export function getSpotById(id: string): SurfSpot | undefined {
+export async function getAllSpots(): Promise<SurfSpot[]> {
+  if (redis) {
+    await ensureSeeded();
+    const data = await redis.get<string>(SPOTS_KEY);
+    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    return [...spots].sort((a, b) => b.rating - a.rating);
+  }
+  return [...memSpots].sort((a, b) => b.rating - a.rating);
+}
+
+export async function getSpotById(id: string): Promise<SurfSpot | undefined> {
+  const spots = await getAllSpots();
   return spots.find((s) => s.id === id);
 }
 
-export function addSpot(input: SurfSpotInput): SurfSpot {
+export async function addSpot(input: SurfSpotInput): Promise<SurfSpot> {
+  if (redis) {
+    await ensureSeeded();
+    const counter = await redis.incr(COUNTER_KEY);
+    const newSpot: SurfSpot = {
+      ...input,
+      id: String(counter),
+      createdAt: new Date().toISOString(),
+    };
+    const data = await redis.get<string>(SPOTS_KEY);
+    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    spots.push(newSpot);
+    await redis.set(SPOTS_KEY, JSON.stringify(spots));
+    return newSpot;
+  }
   const newSpot: SurfSpot = {
     ...input,
-    id: String(++counter),
+    id: String(++memCounter),
     createdAt: new Date().toISOString(),
   };
-  spots.push(newSpot);
+  memSpots.push(newSpot);
   return newSpot;
 }
 
-export function updateSpot(id: string, input: Partial<SurfSpotInput>): SurfSpot | undefined {
-  const idx = spots.findIndex((s) => s.id === id);
+export async function updateSpot(
+  id: string,
+  input: Partial<SurfSpotInput>
+): Promise<SurfSpot | undefined> {
+  if (redis) {
+    await ensureSeeded();
+    const data = await redis.get<string>(SPOTS_KEY);
+    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const idx = spots.findIndex((s) => s.id === id);
+    if (idx === -1) return undefined;
+    spots[idx] = { ...spots[idx], ...input };
+    await redis.set(SPOTS_KEY, JSON.stringify(spots));
+    return spots[idx];
+  }
+  const idx = memSpots.findIndex((s) => s.id === id);
   if (idx === -1) return undefined;
-  spots[idx] = { ...spots[idx], ...input };
-  return spots[idx];
+  memSpots[idx] = { ...memSpots[idx], ...input };
+  return memSpots[idx];
 }
 
-export function deleteSpot(id: string): boolean {
-  const before = spots.length;
-  spots = spots.filter((s) => s.id !== id);
-  return spots.length < before;
+export async function deleteSpot(id: string): Promise<boolean> {
+  if (redis) {
+    await ensureSeeded();
+    const data = await redis.get<string>(SPOTS_KEY);
+    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const filtered = spots.filter((s) => s.id !== id);
+    if (filtered.length === spots.length) return false;
+    await redis.set(SPOTS_KEY, JSON.stringify(filtered));
+    return true;
+  }
+  const before = memSpots.length;
+  memSpots = memSpots.filter((s) => s.id !== id);
+  return memSpots.length < before;
 }
 
-export function getStats(): Stats {
+export async function getStats(): Promise<Stats> {
+  const spots = await getAllSpots();
+
   if (spots.length === 0) {
     return {
       totalSpots: 0,
@@ -116,11 +183,18 @@ export function getStats(): Stats {
 
   const totalRating = spots.reduce((sum, s) => sum + s.rating, 0);
   const totalWaveHeight = spots.reduce((sum, s) => sum + s.waveHeight, 0);
-  const best = spots.reduce((best, s) => (s.waveHeight > best.waveHeight ? s : best), spots[0]);
+  const best = spots.reduce(
+    (best, s) => (s.waveHeight > best.waveHeight ? s : best),
+    spots[0]
+  );
 
   const vibeCounts = new Map<Vibe, number>();
-  spots.forEach((s) => vibeCounts.set(s.vibe, (vibeCounts.get(s.vibe) || 0) + 1));
-  const mostCommonVibe = Array.from(vibeCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  spots.forEach((s) =>
+    vibeCounts.set(s.vibe, (vibeCounts.get(s.vibe) || 0) + 1)
+  );
+  const mostCommonVibe =
+    Array.from(vibeCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+    null;
 
   return {
     totalSpots: spots.length,

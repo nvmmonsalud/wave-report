@@ -1,6 +1,7 @@
 "use client";
 
 import { SurfSpot, CrowdLevel, Vibe } from "@/types";
+import ConditionsBadge from "./ConditionsBadge";
 
 const crowdColors: Record<CrowdLevel, string> = {
   empty: "bg-emerald-400/20 text-emerald-300 border-emerald-400/30",
@@ -63,11 +64,16 @@ export default function SpotCard({
 
       {/* Notes */}
       {spot.notes && (
-        <p className="text-sm text-white/50 mb-4 line-clamp-2 italic">&ldquo;{spot.notes}&rdquo;</p>
+        <p className="text-sm text-white/50 mb-3 line-clamp-2 italic">
+          &ldquo;{spot.notes}&rdquo;
+        </p>
       )}
 
+      {/* Live conditions */}
+      <ConditionsBadge spotName={spot.name} />
+
       {/* Rating stars */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 mt-3">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
