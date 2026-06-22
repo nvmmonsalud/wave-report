@@ -7,6 +7,7 @@ import FilterBar, { Filters } from "@/components/FilterBar";
 import SpotCard from "@/components/SpotCard";
 import AddSpotForm from "@/components/AddSpotForm";
 import ToastContainer, { showToast } from "@/components/Toast";
+import SurfCoach from "@/components/SurfCoach";
 
 export default function Home() {
   const [spots, setSpots] = useState<SurfSpot[]>([]);
@@ -151,6 +152,9 @@ export default function Home() {
         {/* Stats */}
         <StatsGrid stats={stats} />
 
+        {/* AI Surf Coach */}
+        <SurfCoach />
+
         {/* Add spot */}
         <AddSpotForm onAdd={handleAdd} />
 
@@ -187,7 +191,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="text-center py-8 text-cyan-200/30 text-sm">
-        Built with Next.js + GLM 5.2 🤙 · Deploy to Vercel ready
+        Built with Next.js + GLM 5.2 🤙 · AI Surf Coach powered by Claude · Deploy to Vercel ready
       </footer>
 
       {/* Toast notifications */}

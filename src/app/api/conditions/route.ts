@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Spot name → coordinates (for Storm Glass API)
 const COORDS: Record<string, { lat: number; lng: number }> = {
   "Pipeline": { lat: 21.6622, lng: -158.0529 },
-  "Malibu Surfrider": { lat: 34.0345, lng: -118.6787 },
+  "Malibu Surfrider": { lat: 34.0403, lng: -118.6919 },
   "Uluwatu": { lat: -8.8291, lng: 115.0883 },
   "Mundaka": { lat: 43.4069, lng: -2.7036 },
   "Jefferies Bay": { lat: -34.0513, lng: 24.9284 },

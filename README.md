@@ -47,6 +47,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | `PATCH` | `/api/spots/[id]` | Update a spot |
 | `DELETE` | `/api/spots/[id]` | Delete a spot |
 | `GET` | `/api/conditions?name=Pipeline` | Get live conditions for a spot |
+| `POST` | `/api/coach` | Get AI-surf-coach top 3 picks for your preferences |
 
 ## 🔑 Environment Variables (Optional)
 
