@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.2.0 — 2026-06-22 — Live data in Coach + OG image for social previews 🌊
+
+**Headline:** The AI Surf Coach now reasons over live Storm Glass wave heights + the live URL has a proper social preview card.
+
+### What's in
+- **Live conditions in Coach** — `/api/coach` fetches all 6 spots' conditions in parallel (5s timeout each via AbortController) and passes the live data to Claude. The prompt instructs the model to use live wave height (with m→ft conversion) and flag dangerous conditions. The heuristic fallback also uses live data when available.
+  - `liveData: true` flag in the response flips when ≥1 spot has live data
+  - UI shows "🟢 live conditions" badge when liveData is true
+- **OG image for social previews** — New `/api/og.png` endpoint using `@vercel/og` (pure-JS, edge runtime). 1200×630 PNG with:
+  - Linear gradient background (slate-900 → cyan-700)
+  - SVG wave curves at the bottom
+  - Big "Wave Report" title + subtitle
+  - 3 stat cards: 6 SPOTS, 4.5 AVG RATING, 12ft BIGGEST WAVE
+  - "Built with Next.js + GLM 5.2 · AI Coach powered by Claude" footer
+  - 5-min cache headers
+- **Open Graph + Twitter meta tags** — `src/app/layout.tsx` has proper og:image, og:title, og:description, twitter:card=summary_large_image, twitter:image, og:image:width/height/alt. Share the URL anywhere and it shows a proper preview card.
+
+### Build stats
+- Build time: 23s
+- TypeScript: passed (0 errors)
+- 6 routes (1 static + 5 API, including new /api/og.png)
+- 1 new dep: `@vercel/og@^0.11.1`
+
+### Files
+- Modified: `src/app/api/coach/route.ts` — parallel conditions fetcher, live data in prompt + heuristic
+- Modified: `src/app/api/conditions/route.ts` — unchanged (already supported live + mock)
+- New: `src/app/api/og.png/route.tsx` — @vercel/og image route
+- Modified: `src/app/layout.tsx` — Open Graph + Twitter meta tags
+- Modified: `src/components/SurfCoach.tsx` — live data badge (already supported)
+- Modified: `package.json` — added `@vercel/og`
+- Modified: `REEL.md` — v2 with 60s + 90s cut variants, captions, audio, calendar
+
+---
+
 ## v1.1.1 — 2026-06-22 — Redis + Claude upgrade 🔥
 
 **Headline:** Upstash Redis persistence + Claude Haiku-powered AI Surf Coach live on the production site.
