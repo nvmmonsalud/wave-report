@@ -227,7 +227,6 @@ export default function SurfCoach() {
                   ↻ Re-pick
                 </button>
               </div>
-
               <div className="space-y-3">
                 {result.topPicks.map((pick, idx) => (
                   <div
@@ -256,7 +255,6 @@ export default function SurfCoach() {
                         {pick.score}
                       </div>
                     </div>
-
                     {pick.reasons.length > 0 && (
                       <ul className="text-cyan-200/70 text-sm space-y-1 mb-2">
                         {pick.reasons.map((r, i) => (
@@ -264,7 +262,6 @@ export default function SurfCoach() {
                         ))}
                       </ul>
                     )}
-
                     {pick.warnings.length > 0 && (
                       <ul className="text-amber-300/80 text-xs space-y-1">
                         {pick.warnings.map((w, i) => (

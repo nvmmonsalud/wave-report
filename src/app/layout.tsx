@@ -15,6 +15,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "🌊 Wave Report — Surf Spot Rater",
   description: "Rate surf spots, track vibes, and find your next wave. Built with Next.js + GLM 5.2.",
+  openGraph: {
+    title: '🌊 Wave Report — Surf Spot Rater',
+    description: 'Built in 1 hour with GLM 5.2. Live conditions + AI Coach.',
+    images: [
+      {
+        url: 'https://wave-report-ten.vercel.app/api/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Wave Report — surf spot rater with live conditions and AI coach',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '🌊 Wave Report',
+    description: 'Rate the breaks. Track the vibes. Find your next wave.',
+    images: ['https://wave-report-ten.vercel.app/api/og.png'],
+  },
 };
 
 export default function RootLayout({
