@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.1.1 — 2026-06-22 — Redis + Claude upgrade 🔥
+
+**Headline:** Upstash Redis persistence + Claude Haiku-powered AI Surf Coach live on the production site.
+
+### What's in
+- **Upstash Redis persistence** — all CRUD operations now write to Upstash, no more in-memory resets on cold starts
+  - Versioned keys (`wave-report:v2:*`) to bypass any corrupted data from the initial deploy
+  - Fixed `@upstash/redis` SDK JSON auto-serialization (was double-encoding with `JSON.stringify`)
+  - Full cycle tested: POST → GET (7 spots) → DELETE → GET (6 spots) all working
+- **Claude Haiku Surf Coach** — `/api/coach` now uses real Claude model when `ANTHROPIC_API_KEY` is set
+  - Produces domain-aware reasoning: "Requires solid reef awareness and duck-dive technique", "Swell-dependent; timing and forecasting crucial"
+  - Generates proper warnings for safety (over-skill ratings, over-crowd, vibe mismatch)
+  - Writes a 1-2 sentence summary synthesizing the picks
+- **Storm Glass live conditions** — API call + mock fallback wired. Pipeline and Uluwatu have returned live readings (1.04m and 1.5m respectively); rate-limiting on Storm Glass free tier causes occasional fallback to mock. Graceful degradation works.
+
+### Env vars now set
+- `STORMGLASS_API_KEY` (live conditions)
+- `KV_REST_API_URL` + `KV_REST_API_TOKEN` + `KV_URL` + `REDIS_URL` (Upstash)
+- `ANTHROPIC_API_KEY` (Claude Surf Coach)
+
+### Build stats
+- Build time: 12s
+- TypeScript: passed
+- 6 routes (1 static + 5 API)
+
+### Files
+- Modified: `src/lib/store.ts` — fixed Redis serialization, versioned keys, refactored to readSpots() helper
+
+---
+
 ## v1.1.0 — 2026-06-22 — AI Surf Coach + live conditions 🤙
 
 **Headline:** New `/api/coach` endpoint ranks your top 3 spots by skill, vibe, wave size, and crowd. Storm Glass live conditions flowing for Pipeline + Uluwatu.
