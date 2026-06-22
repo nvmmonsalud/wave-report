@@ -63,6 +63,13 @@
 **Visual:** URL `wave-report-ten.vercel.app` filling the screen, animated wave underneath
 **Audio hit:** Final wave crash
 
+### Beat 12b — OPTIONAL: AI Surf Coach hook (0:56-1:04, +8s)
+**Overlay:** `AI SURF COACH`
+**Subtitle:** `tell me your level. I'll rank the top 3.`
+**Visual:** Click "AI Surf Coach" button → preferences expand → click "Find My Top 3 Spots" → result panel animates in with Uluwatu 95, Malibu 95, Cowells 90
+**Audio hit:** Synth swell
+**Use this if your Reel is 1:08 instead of 1:00 — the coach is the "10x more Reel-worthy" moment from our session. Drop beat 5 (one of the build montage) to keep it 1:00.
+
 ## Caption (Instagram/TikTok)
 
 > 🌊 I built a full-stack surf spot rater in 1 hour using GLM 5.2 — a brand new model I hadn't tested.
