@@ -1,5 +1,7 @@
 # 🌊 Wave Report — Surf Spot Rater
 
+> 🟢 **Live demo:** [wave-report-ten.vercel.app](https://wave-report-ten.vercel.app) · Built in 1 hour with GLM 5.2 · Deployed on Vercel
+
 A full-stack Next.js app for rating surf spots, tracking vibes, and finding your next wave.
 
 Built with **GLM 5.2** via Hermes Agent to test the model's coding capabilities.
