@@ -8,8 +8,8 @@ const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_
 const redis = kvUrl && kvToken ? new Redis({ url: kvUrl, token: kvToken }) : null;
 export const hasRedis = !!redis;
 
-const SPOTS_KEY = "wave-report:spots";
-const COUNTER_KEY = "wave-report:counter";
+const SPOTS_KEY = "wave-report:v2:spots";
+const COUNTER_KEY = "wave-report:v2:counter";
 
 // In-memory fallback store (seed data)
 const seedSpots: SurfSpot[] = [
@@ -89,7 +89,8 @@ async function ensureSeeded(): Promise<void> {
   if (!redis) return;
   const exists = await redis.exists(SPOTS_KEY);
   if (!exists) {
-    await redis.set(SPOTS_KEY, JSON.stringify(seedSpots));
+    // Store as a plain array — @upstash/redis auto-serializes/deserializes JSON
+    await redis.set(SPOTS_KEY, seedSpots);
     await redis.set(COUNTER_KEY, 100);
   }
 }
@@ -97,8 +98,7 @@ async function ensureSeeded(): Promise<void> {
 export async function getAllSpots(): Promise<SurfSpot[]> {
   if (redis) {
     await ensureSeeded();
-    const data = await redis.get<string>(SPOTS_KEY);
-    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const spots = await readSpots();
     return [...spots].sort((a, b) => b.rating - a.rating);
   }
   return [...memSpots].sort((a, b) => b.rating - a.rating);
@@ -107,6 +107,13 @@ export async function getAllSpots(): Promise<SurfSpot[]> {
 export async function getSpotById(id: string): Promise<SurfSpot | undefined> {
   const spots = await getAllSpots();
   return spots.find((s) => s.id === id);
+}
+
+async function readSpots(): Promise<SurfSpot[]> {
+  const data = (await redis!.get(SPOTS_KEY)) as unknown;
+  if (typeof data === "string") return JSON.parse(data);
+  if (data && typeof data === "object") return data as SurfSpot[];
+  return [];
 }
 
 export async function addSpot(input: SurfSpotInput): Promise<SurfSpot> {
@@ -118,10 +125,9 @@ export async function addSpot(input: SurfSpotInput): Promise<SurfSpot> {
       id: String(counter),
       createdAt: new Date().toISOString(),
     };
-    const data = await redis.get<string>(SPOTS_KEY);
-    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const spots = await readSpots();
     spots.push(newSpot);
-    await redis.set(SPOTS_KEY, JSON.stringify(spots));
+    await redis.set(SPOTS_KEY, spots);
     return newSpot;
   }
   const newSpot: SurfSpot = {
@@ -139,12 +145,11 @@ export async function updateSpot(
 ): Promise<SurfSpot | undefined> {
   if (redis) {
     await ensureSeeded();
-    const data = await redis.get<string>(SPOTS_KEY);
-    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const spots = await readSpots();
     const idx = spots.findIndex((s) => s.id === id);
     if (idx === -1) return undefined;
     spots[idx] = { ...spots[idx], ...input };
-    await redis.set(SPOTS_KEY, JSON.stringify(spots));
+    await redis.set(SPOTS_KEY, spots);
     return spots[idx];
   }
   const idx = memSpots.findIndex((s) => s.id === id);
@@ -156,11 +161,10 @@ export async function updateSpot(
 export async function deleteSpot(id: string): Promise<boolean> {
   if (redis) {
     await ensureSeeded();
-    const data = await redis.get<string>(SPOTS_KEY);
-    const spots: SurfSpot[] = data ? JSON.parse(data) : [];
+    const spots = await readSpots();
     const filtered = spots.filter((s) => s.id !== id);
     if (filtered.length === spots.length) return false;
-    await redis.set(SPOTS_KEY, JSON.stringify(filtered));
+    await redis.set(SPOTS_KEY, filtered);
     return true;
   }
   const before = memSpots.length;
